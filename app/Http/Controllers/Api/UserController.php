@@ -6,152 +6,139 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Validator;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserController extends Controller
 {
     // 1️⃣ Check unique username
     public function isUniqueUser($username)
     {
+        $exists = User::where('username', $username)->exists();
+
         return response()->json([
-            'unique' => !User::where('username', $username)->exists()
+            'status'  => !$exists,
+            'message' => $exists ? 'Username already exists' : 'Username is available',
+            'data'    => ['unique' => !$exists]
         ]);
     }
 
-    // 2️⃣ Register user
+    // 2️⃣ Register
     public function register(Request $request)
     {
         $request->validate([
             'username' => 'required|unique:users,username',
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:8'
         ]);
 
         $user = User::create([
             'username' => $request->username,
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password)
         ]);
 
         return response()->json([
+            'status'  => true,
             'message' => 'User registered successfully',
-            'uid' => $user->id
+            'data'    => [
+                'username' => $user->username,
+                'email'    => $user->email
+            ]
+        ], 201);
+    }
+
+    // 3️⃣ Login (JWT)
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required|min:8',
+        ]);
+
+        if (! $token = auth()->attempt($credentials)) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Invalid credentials',
+                'data'    => null
+            ], 401);
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Login successful',
+            'data'    => [
+                'token' => $token,
+                'token_type' => 'Bearer'
+            ]
         ]);
     }
 
-    // 3️⃣ Complete profile
-    //old complete profile api
-    //  public function completeProfile(Request $request)
-    // {
-    //     $uid = $request->header('uid');
-
-    //     if (!$uid) {
-    //         return response()->json(['message' => 'UID required'], 400);
-    //     }
-
-    //     $request->validate([
-    //         'phone' => 'required|string|max:255',
-    //         'dob' => 'required |date',
-    //         'gender' => 'required|in:Male,Female',
-    //         'city' => 'required|string|max:255',
-    //         'bio' => 'nullable|string|max:255',
-    //         'profile_pic' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-    //     ]);
-
-    //     $user = User::find($uid);
-
-    //     if (!$user) {
-    //         return response()->json(['message' => 'User not found'], 404);
-    //     }
-
-    //     $user->update($request->all());
-
-    //     return response()->json(['message' => 'Profile completed']);
-    // }
-
+    // 4️⃣ Complete profile (JWT)
     public function completeProfile(Request $request)
     {
         $user = auth()->user();
 
-        $request->validate([
-            'phone' => 'required |string|max:255',
-            'dob' => 'required |date',
-            'gender' => 'required|in:Male,Female',
-            'city' => 'required |string|max:255',
-            'bio' => 'nullable |string|max:255',
-            'profile_pic' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048'
-        ]);
-
-        $user->update($request->all());
-
-        return response()->json(['message' => 'Profile updated']);
-    }
-
-    // 4️⃣ Login
-    //old login api
-    // public function login(Request $request)
-    // {
-    //     $request->validate([
-    //         'email' => 'required|email',
-    //         'password' => 'required|min:8'
-    //     ]);
-
-    //     $user = User::where('email', $request->email)->first();
-
-    //     if (!$user || !Hash::check($request->password, $user->password)) {
-    //         return response()->json(['message' => 'Invalid credentials'], 401);
-    //     }
-
-    //     return response()->json([
-    //         'message' => 'Login successful',
-    //         'uid' => $user->id
-    //     ]);
-    // }
-
-    public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|min:8',
-        ]);
-
-        if (!$token = auth()->attempt($credentials)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+        if (! $user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthenticated',
+                'data' => null
+            ], 401);
         }
 
+        $request->validate([
+            'phone'  => 'required|string|max:255',
+            'dob'    => 'required|date',
+            'gender' => 'required|in:Male,Female',
+            'city'   => 'required|string|max:255',
+            'bio'    => 'nullable|string|max:255',
+            'profile_pic' => 'nullable|string|max:255' // image handling baad me “We store only the image path in database; actual file upload is handled separately.”
+        ]);
+
+        $user->update($request->only([
+            'phone','dob','gender','city','bio','profile_pic'
+        ]));
+
         return response()->json([
-            'message' => 'Login successful',
-            'token' => $token,
-            'token_type' => 'Bearer'
+            'status'  => true,
+            'message' => 'Profile updated successfully',
+            'data'    => $user
         ]);
     }
 
-    // 5️⃣ Get user
-    // public function getUser($uid)
-    // {
-    //     $user = User::find($uid);
 
-    //     if (!$user) {
-    //         return response()->json(['message' => 'User not found'], 404);
-    //     }
 
-    //     return response()->json($user);
-    // }
-
-    // 5️⃣ Get logged-in user (JWT based)
+       //5️⃣ Get logged-in user (JWT)
+    
     public function getProfile()
     {
         $user = auth()->user();
 
         if (!$user) {
             return response()->json([
-                'message' => 'Unauthenticated'
+                'status'  => false,
+                'message' => 'Unauthenticated',
+                'data'    => null
             ], 401);
         }
 
-        return response()->json($user);
+        return response()->json([
+            'status'  => true,
+            'message' => 'User profile fetched',
+            'data'    => $user
+        ]);
+    }
+
+    // 6️⃣ Logout
+    public function logout()
+    {
+        auth()->logout();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Logout successful',
+            'data'    => null
+        ]);
     }
 }
