@@ -109,7 +109,7 @@ class UserController extends Controller
         'gender' => 'required|in:Male,Female',
         'city'   => 'required|string',
         'bio'    => 'nullable|string|max:500',
-        'profile_pic' => 'nullable|url'
+        'profile_pic' => 'nullable|image|max:5048'
     ]);
 
     $user->update($request->only([
@@ -124,15 +124,6 @@ class UserController extends Controller
 }
 
     // 5️⃣ Get profile
-    //old he ye
-    // public function getProfile(Request $request)
-    // {
-    //     return response()->json([
-    //         'status'  => true,
-    //         'message' => 'User profile',
-    //         'data'    => $request->get('auth_user')
-    //     ]);
-    // }
 
     public function getProfile(Request $request)
 {
@@ -167,17 +158,6 @@ class UserController extends Controller
 }
 
     // 6️⃣ Logout (CUSTOM JWT)
-    //old he ye
-    // public function logout(Request $request)
-    // {
-    //     // Since JWT is stateless, logout can be handled on client side
-    //     return response()->json([
-    //         'status'  => true,
-    //         'message' => 'Logout successful',
-    //         'data'    => null
-    //     ]);
-    // }
-
     public function logout(Request $request)
 {
     // 🔐 TOKEN CHECK
