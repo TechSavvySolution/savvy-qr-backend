@@ -71,39 +71,15 @@ class UserController extends Controller
             'status'  => true,
             'message' => 'Login successful',
             'data'    => [
-                'token' => JwtHelper::generateToken($user)
+                'token' => JwtHelper::generateToken($user),
+                'user'  => $user
             ]
         ]);
     }
 
     // 4️⃣ Complete profile (CUSTOM JWT)
-    //old he ye 
-    // public function completeProfile(Request $request)
-    // {
-    //     $user = $request->get('auth_user');
-
-    //     $request->validate([
-    //         'phone'  => 'required |digits_between:10,15',
-    //         'dob'    => 'required|date|before:today',
-    //         'gender' => 'required|in:Male,Female',
-    //         'city'   => 'required |string',
-    //         'bio'    => 'nullable|string|max:500',
-    //         'profile_pic' => 'nullable|url'
-    //     ]);
-
-    //     $user->update($request->only([
-    //         'phone','dob','gender','city','bio','profile_pic'
-    //     ]));
-
-    //     return response()->json([
-    //         'status'  => true,
-    //         'message' => 'Profile updated',
-    //         'data'    => $user
-    //     ]);
-    // }
     public function completeProfile(Request $request)
 {
-    // 🔐 TOKEN CHECK — YAHI DALNA HAI
     $authHeader = $request->header('Authorization');
 
     if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
