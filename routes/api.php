@@ -11,11 +11,12 @@ use App\Http\Controllers\Api\UserController;
         Route::post('/register', [UserController::class, 'register']);
         Route::post('/login', [UserController::class, 'login']);
 
-        // JWT Protected
-        Route::middleware('auth:api')->group(function () {
-            Route::post('/complete-profile', [UserController::class, 'completeProfile']);
-            Route::get('/me', [UserController::class, 'getProfile']);
-            Route::post('/logout', [UserController::class, 'logout']);
-        });
+        // Custom JWT protected
+        // Route::middleware('custom.jwt')->group(function () {
+        Route::post('/complete-profile', [UserController::class, 'completeProfile']);
+        Route::get('/me', [UserController::class, 'getProfile']);
+        Route::get('/logout', [UserController::class, 'logout']);
+        // });
 
     });
+ 
