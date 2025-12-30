@@ -2,24 +2,26 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\UserController;
-use App\Http\Middleware\APIMiddleware;
 
+// We use the alias 'api.auth' which you defined in bootstrap/app.php
+// This is safer than importing the class directly when caching issues happen.
 
+Route::prefix('user')->group(function () {
 
-    Route::prefix('user')->group(function () {
+    // 🟢 PUBLIC ROUTES (No Token Needed)
+    Route::post('/register', [UserController::class, 'register']);
+    Route::post('/login', [UserController::class, 'login']);
+    Route::get('/is-unique-user/{username}', [UserController::class, 'isUniqueUser']);
 
-        // Public
-        Route::get('/is-unique-user/{username}', [UserController::class, 'isUniqueUser']);
-        Route::post('/register', [UserController::class, 'register']);
-        Route::post('/login', [UserController::class, 'login']);
+    // 🔒 PROTECTED ROUTES (Requires Login)
+    // We group these under the 'api.auth' middleware
+    Route::middleware('api.auth')->group(function () {
+        
+        Route::post('/complete-profile', [UserController::class, 'completeProfile']);
+        Route::get('/me', [UserController::class, 'getProfile']);
+        Route::get('/by-id/{id}', [UserController::class, 'getUserById']);
+        Route::post('/logout', [UserController::class, 'logout']);
+        
+    });
+
 });
-       // Group 2: Protected Routes (WITH Middleware)
-Route::prefix('user')->middleware([APIMiddleware::class])->group(function () {
-    Route::post('/complete-profile', [UserController::class, 'completeProfile']);
-    Route::get('/me', [UserController::class, 'getProfile']);
-    Route::get('/by-id/{id}', [UserController::class, 'getUserById']);
-    Route::post('/logout', [UserController::class, 'logout']);
-});
-
-    
- 
