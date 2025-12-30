@@ -117,6 +117,7 @@ class UserController extends Controller
         $userId = $request->auth_user->id ?? $request->auth_user['id'] ?? null;
         $user = User::find($userId);
 
+
         if (!$user) {
             return response()->json([
                 'status' => false,
@@ -159,7 +160,7 @@ class UserController extends Controller
         $user->bio    = $request->bio;
         
         $user->save();
-
+        
         return response()->json([
             'status'  => true,
             'message' => 'Profile updated successfully',

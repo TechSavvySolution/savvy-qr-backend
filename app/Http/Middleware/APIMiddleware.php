@@ -12,7 +12,7 @@ class APIMiddleware
     {
         // Set timezone
         date_default_timezone_set('Asia/Kolkata');
-        
+
         // 1️⃣ Login / register ko skip
         if ($request->is('api/user/login') || $request->is('api/user/register')) {
             return $next($request);

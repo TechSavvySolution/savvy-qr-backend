@@ -29,7 +29,7 @@ class TokenHelper
 
             // 2. Check Expiry
             if ($data['exp'] < time()) {
-                return [
+                return [    
                     'status'  => false,
                     'message' => 'Token expired'
                 ];
