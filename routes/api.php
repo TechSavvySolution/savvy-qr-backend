@@ -14,7 +14,7 @@ use App\Http\Middleware\APIMiddleware;
         Route::post('/login', [UserController::class, 'login']);
 
         // Custom middleware protected
-        Route::middleware('api.auth')->group(function () {
+        Route::middleware(APIMiddleware::class)->group(function () {
         Route::post('/complete-profile', [UserController::class, 'completeProfile']);
         Route::get('/me', [UserController::class, 'getProfile']);
         Route::get('/by-id/{id}', [UserController::class, 'getUserById']);
