@@ -12,14 +12,14 @@ use App\Http\Middleware\APIMiddleware;
         Route::get('/is-unique-user/{username}', [UserController::class, 'isUniqueUser']);
         Route::post('/register', [UserController::class, 'register']);
         Route::post('/login', [UserController::class, 'login']);
+});
+       // Group 2: Protected Routes (WITH Middleware)
+Route::prefix('user')->middleware([APIMiddleware::class])->group(function () {
+    Route::post('/complete-profile', [UserController::class, 'completeProfile']);
+    Route::get('/me', [UserController::class, 'getProfile']);
+    Route::get('/by-id/{id}', [UserController::class, 'getUserById']);
+    Route::post('/logout', [UserController::class, 'logout']);
+});
 
-        // Custom middleware protected
-        Route::middleware(APIMiddleware::class)->group(function () {
-        Route::post('/complete-profile', [UserController::class, 'completeProfile']);
-        Route::get('/me', [UserController::class, 'getProfile']);
-        Route::get('/by-id/{id}', [UserController::class, 'getUserById']);
-        Route::post('/logout', [UserController::class, 'logout']);
-        });
-
-    });
+    
  
