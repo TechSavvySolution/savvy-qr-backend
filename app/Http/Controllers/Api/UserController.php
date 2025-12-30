@@ -121,7 +121,7 @@ class UserController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'User account not found in database',
-                'data' => null
+                'data' => null 
             ], 404);
         }
         $request->validate([
