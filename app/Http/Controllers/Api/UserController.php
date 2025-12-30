@@ -101,8 +101,29 @@ class UserController extends Controller
 
   public function completeProfile(Request $request)
     {
-        $user = $request->auth_user;
+        // auth_user already verified by middleware
+        // $user = $request->auth_user;
+        // 1. Check if auth_user exists from middleware
+        if (!$request->auth_user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized: User not found or token invalid',
+                'data' => null
+            ], 401);
+        }
 
+        // 2. Ensure we have a real User Model (required for ->save())
+        // If middleware passed an ID or array, we find the model here.
+        $userId = $request->auth_user->id ?? $request->auth_user['id'] ?? null;
+        $user = User::find($userId);
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User account not found in database',
+                'data' => null
+            ], 404);
+        }
         $request->validate([
             'phone'       => 'required|digits_between:10,15',
             'dob'         => 'required|date|before:today',
@@ -136,6 +157,7 @@ class UserController extends Controller
         $user->gender = $request->gender;
         $user->city   = $request->city;
         $user->bio    = $request->bio;
+        
         $user->save();
 
         return response()->json([
