@@ -1,12 +1,13 @@
 <?php
-
+ 
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use App\Helpers\JwtHelper;
+use Illuminate\Support\Facades\Storage;
+use App\Helpers\TokenHelper;
 
 class UserController extends Controller
 {
@@ -27,12 +28,12 @@ class UserController extends Controller
     {
         $request->validate([
             'username' => 'required|unique:users,username',
-            'name'     => 'required',
+            'name'     => 'required |string|max:255',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:8'
         ]);
 
-        User::create([
+        $user = User::create([
             'username' => $request->username,
             'name'     => $request->name,
             'email'    => $request->email,
@@ -43,13 +44,15 @@ class UserController extends Controller
             'status'  => true,
             'message' => 'User registered successfully',
             'data'    => 
-             ['username' => $request->username,
-                'email'    => $request->email
+             [
+                'id'       => $user->id,
+                'username' => $user->username,
+                'email'    => $user->email
               ]
-        ]);
+        ] ,201 );
     }
 
-    // 3️⃣ Login (CUSTOM JWT)
+    // 3️⃣ Login 
     public function login(Request $request)
     {
         $request->validate([
@@ -71,111 +74,113 @@ class UserController extends Controller
             'status'  => true,
             'message' => 'Login successful',
             'data'    => [
-                'token' => JwtHelper::generateToken($user),
+                'token' => TokenHelper::encode($user),
                 'user'  => $user
             ]
         ]);
     }
 
-    // 4️⃣ Complete profile (CUSTOM JWT)
-    public function completeProfile(Request $request)
-{
-    $authHeader = $request->header('Authorization');
-
-    if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Token missing',
-            'data' => null
-        ], 401);
-    }
-
-    $token = str_replace('Bearer ', '', $authHeader);
-    $user = JwtHelper::verifyToken($token);
-
-    if (!$user) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Invalid or expired token',
-            'data' => null
-        ], 401);
-    }
-    // 🔐 TOKEN CHECK KHATAM
-
-    // ✅ Ab $user available hai
-    $request->validate([
-        'phone'  => 'required|digits_between:10,15',
-        'dob'    => 'required|date|before:today',
-        'gender' => 'required|in:Male,Female',
-        'city'   => 'required|string',
-        'bio'    => 'nullable|string|max:500',
-        'profile_pic' => 'nullable|image|max:5048'
-    ]);
-
-    $user->update($request->only([
-        'phone','dob','gender','city','bio','profile_pic'
-    ]));
-
-    return response()->json([
-        'status'  => true,
-        'message' => 'Profile updated',
-        'data'    => $user
-    ]);
-}
-
-    // 5️⃣ Get profile
-
+     /* ===============================
+       4️⃣ Get logged-in user profile (PROTECTED)
+       Middleware already verified token
+    =============================== */
     public function getProfile(Request $request)
-{
-    // 🔐 TOKEN CHECK — YAHI DALNA HAI
-    $authHeader = $request->header('Authorization');
-
-    if (!$authHeader || strpos($authHeader, 'Bearer ') !== 0) {
-    return response()->json([
-        'status' => false,
-        'message' => 'Token missing',
-        'data' => null
-    ], 401);
-}
-
-    $token = substr($authHeader, 7);
-    $user = JwtHelper::verifyToken($token);
-
-    if (!$user) {
+    {
         return response()->json([
-            'status' => false,
-            'message' => 'Invalid or expired token',
-            'data' => null
-        ], 401);
+            'status'  => true,
+            'message' => 'User profile fetched',
+            'data'    => $request->auth_user
+        ]);
     }
-    // 🔐 TOKEN CHECK KHATAM
 
-    return response()->json([
-        'status'  => true,
-        'message' => 'User profile fetched',
-        'data'    => $user
-    ]);
-}
 
-    // 6️⃣ Logout (CUSTOM JWT)
+     /* ===============================
+       5️⃣ Complete / Update profile (PROTECTED)
+       Image update + old delete
+    =============================== */
+
+  public function completeProfile(Request $request)
+    {
+        $user = $request->auth_user;
+
+        $request->validate([
+            'phone'       => 'required|digits_between:10,15',
+            'dob'         => 'required|date|before:today',
+            'gender'      => 'required|in:Male,Female',
+            'city'        => 'required|string|max:255',
+            'bio'         => 'nullable|string|max:500',
+            'profile_pic' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120'
+        ]);
+
+        // 🖼 Image upload + old delete
+        if ($request->hasFile('profile_pic')) {
+
+            if ($user->profile_pic && Storage::disk('public')->exists(
+                str_replace('storage/', '', $user->profile_pic)
+            )) {
+                Storage::disk('public')->delete(
+                    str_replace('storage/', '', $user->profile_pic)
+                );
+            }
+
+            $image = $request->file('profile_pic');
+            $fileName = 'user_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $image->storeAs('profile', $fileName, 'public');
+
+            $user->profile_pic = 'storage/profile/' . $fileName;
+        }
+
+        // Other fields
+        $user->phone  = $request->phone;
+        $user->dob    = $request->dob;
+        $user->gender = $request->gender;
+        $user->city   = $request->city;
+        $user->bio    = $request->bio;
+        $user->save();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Profile updated successfully',
+            'data'    => $user
+        ]);
+    }
+
+       /* ===============================
+       6️⃣ Find user by ID (PROTECTED)
+       Why protected? Security.
+    =============================== */
+    public function getUserById(Request $request, $id)
+    {
+        // auth_user already verified by middleware
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'User not found',
+                'data'    => null
+            ], 404);
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'User found',
+            'data'    => $user
+        ]);
+    }
+
+
+    /* ===============================
+       7️⃣ Logout (PROTECTED)
+       Stateless token → client side logout
+    =============================== */
     public function logout(Request $request)
-{
-    // 🔐 TOKEN CHECK
-    $authHeader = $request->header('Authorization');
-
-    if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
+    {
         return response()->json([
-            'status' => false,
-            'message' => 'Token missing',
-            'data' => null
-        ], 401);
+            'status'  => true,
+            'message' => 'Logout successful',
+            'data'    => null
+        ]);
     }
-
-    return response()->json([
-        'status' => true,
-        'message' => 'Logout successful',
-        'data' => null
-    ]);
-}
 
 }

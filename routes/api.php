@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\UserController;
 
 
+
     Route::prefix('user')->group(function () {
 
         // Public
@@ -11,12 +12,13 @@ use App\Http\Controllers\Api\UserController;
         Route::post('/register', [UserController::class, 'register']);
         Route::post('/login', [UserController::class, 'login']);
 
-        // Custom JWT protected
-        // Route::middleware('custom.jwt')->group(function () {
+        // Custom middleware protected
+        Route::middleware('api.auth')->group(function () {
         Route::post('/complete-profile', [UserController::class, 'completeProfile']);
         Route::get('/me', [UserController::class, 'getProfile']);
-        Route::get('/logout', [UserController::class, 'logout']);
-        // });
+        Route::get('/by-id/{id}', [UserController::class, 'getUserById']);
+        Route::post('/logout', [UserController::class, 'logout']);
+        });
 
     });
  

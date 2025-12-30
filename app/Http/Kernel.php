@@ -1,3 +1,3 @@
 protected $routeMiddleware = [
-    'custom.jwt' => \App\Http\Middleware\CustomJwtAuth::class,
-];
+    'api.auth' => \App\Http\Middleware\APIMiddleware::class,
+];  
