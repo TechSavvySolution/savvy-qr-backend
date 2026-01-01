@@ -37,7 +37,7 @@ Route::prefix('website')->middleware([APIMiddleware::class])->group(function () 
     // URL: http://.../api/website/create
     Route::post('/create', [WebsiteController::class, 'store']); 
 
-    // 2️⃣ Get My Website Data (For the Editor)
+    // 2️ .  Get My Website Data (For the Editor)
     // URL: http://.../api/website/my-site
     Route::get('/my-site', [WebsiteController::class, 'show']); 
 
