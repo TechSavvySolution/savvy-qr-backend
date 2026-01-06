@@ -11,9 +11,9 @@ class WebsiteSection extends Model
 
     protected $fillable = ['website_id', 'section_type', 'order_index', 'content', 'styles'];
 
-    // ✅ MAGIC: Automatically convert JSON to Array when you use it in PHP
     protected $casts = [
-        'content' => 'array',
+        'content' => 'array', 
         'styles' => 'array',
     ];
+    
 }

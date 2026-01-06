@@ -9,3 +9,5 @@ use Illuminate\Support\Facades\Route;
 //     Artisan::call('optimize:clear');
 //     return "✅ Routes and Cache Cleared Successfully! Go try your API now.";
 // }); 
+
+//simple for testing please write
