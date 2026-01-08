@@ -5,15 +5,34 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+// class Website extends Model
+// {
+//     use HasFactory;
+
+//     protected $fillable = ['user_id', 'template_name', 'title', 'slug', 'is_published'];
+
+//     // Link to Sections
+//     public function sections()
+//     {
+//         return $this->hasMany(WebsiteSection::class)->orderBy('order_index');
+//     }
+// }
+
+
 class Website extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'template_name', 'title', 'slug', 'is_published'];
+    // 🟢 ADD THIS
+    protected $fillable = [
+        'user_id', 
+        'template_id', 
+        'title', 
+        'active'
+    ];
 
-    // Link to Sections
     public function sections()
     {
-        return $this->hasMany(WebsiteSection::class)->orderBy('order_index');
+        return $this->hasMany(WebsiteSection::class);
     }
 }

@@ -53,41 +53,6 @@ public function storeTemplate(Request $request)
     ]);
 }
 
-
-    // Save a Section Rule (The data from your "Add Section" Pop-up)
-    public function storeSection(Request $request)
-    {
-        $request->validate([
-            'master_template_id' => 'required|exists:master_templates,id',
-            'name' => 'required|string', // e.g., "Hero Section"
-            'type' => 'required|string', // e.g., "hero", "nav"
-            'fields_schema' => 'required|array', // THIS IS THE DYNAMIC PART
-            'default_styles' => 'nullable|array'
-        ]);
-
-        // Example of what 'fields_schema' looks like coming from your Admin UI:
-        // [
-        //    { "label": "Main Title", "type": "short_text", "key": "title" },
-        //    { "label": "Background", "type": "photo", "key": "bg_image" }
-        // ]
-
-        $section = MasterSection::create([
-            'master_template_id' => $request->master_template_id,
-            'name' => $request->name,
-            'type' => $request->type,
-            'fields_schema' => $request->fields_schema, // Saving the rules as JSON
-            'default_styles' => $request->default_styles
-        ]);
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Section rule saved successfully',
-            'data' => $section
-        ]);
-    }
-
-
-
    public function updateDetails(Request $request, $id)
 {
     $template = MasterTemplate::findOrFail($id);
@@ -114,4 +79,61 @@ public function storeTemplate(Request $request)
         'data' => $template
     ]);
 }
+
+    // Save a Section Rule (The data from your "Add Section" Pop-up)
+    public function storeSection(Request $request)
+    {
+        $request->validate([
+            'master_template_id' => 'required|exists:master_templates,id',
+            'name' => 'required|string', // e.g., "Hero Section"
+            'type' => 'required|string', // e.g., "hero", "nav"
+            'fields_schema' => 'nullable|array', // THIS IS THE DYNAMIC PART
+            'default_styles' => 'nullable|array'
+        ]);
+
+        // Example of what 'fields_schema' looks like coming from your Admin UI:
+        // [
+        //    { "label": "Main Title", "type": "short_text", "key": "title" },
+        //    { "label": "Background", "type": "photo", "key": "bg_image" }
+        // ]
+
+        $section = MasterSection::create([
+            'master_template_id' => $request->master_template_id,
+            'name' => $request->name,
+            'type' => $request->type,
+            'fields_schema' => $request->fields_schema, // Saving the rules as JSON
+            'default_styles' => $request->default_styles
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Section rule saved successfully',
+            'data' => $section
+        ]);
+    }
+
+
+    /* ===============================
+       7️⃣ Find Template by ID (PUBLIC/PROTECTED)
+       Used by: Mobile App & Frontend Builder
+    =============================== */
+    public function getTemplateById(Request $request, $id)
+    {
+        // We use 'with("sections")' because the app needs the sections to build the layout
+        $template = MasterTemplate::with('sections')->find($id);
+
+        if (!$template) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Template not found',
+                'data'    => null
+            ], 404);
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Template fetched successfully',
+            'data'    => $template
+        ]);
+    }
 }

@@ -70,6 +70,29 @@ class UserController extends Controller
             ], 401);
         }
 
+        // 🟢 HARDCODED ADMIN CHECK
+        // If the email is YOUR admin email, they get the 'admin' role.
+        // Everyone else gets 'user'.
+        // $role = ($user->email === 'admin@gmail.com') ? 'admin' : 'user';
+
+        // $role = 'user'; // Default
+        // if ($user->email === 'admin@gmail.com') {
+        //     $role = 'admin';
+        // }
+
+        // return response()->json([
+        //     'status'  => true,
+        //     'message' => 'Login successful',
+        //     'token'   => TokenHelper::encode($user),
+        //     'user'    => [
+        //         'id'          => $user->id,
+        //         'name'        => $user->name,
+        //         'email'       => $user->email,
+        //         'role'        => $role, // 👈 Sending the calculated role
+        //         'profile_pic' => $user->profile_pic
+        //     ]
+        // ]);
+
         return response()->json([
             'status'  => true,
             'message' => 'Login successful',

@@ -2,18 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class WebsiteSection extends Model
 {
-    use HasFactory;
+    // 🟢 1. This prevents "Mass Assignment" errors
+    protected $fillable = ['website_id', 'section_id', 'values', 'style'];
 
-    protected $fillable = ['website_id', 'section_type', 'order_index', 'content', 'styles'];
-
+    // 🟢 2. This handles the JSON data automatically
     protected $casts = [
-        'content' => 'array', 
-        'styles' => 'array',
+        'values' => 'array',
+        'style'  => 'array',
     ];
-    
 }

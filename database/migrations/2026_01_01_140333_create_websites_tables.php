@@ -11,25 +11,30 @@ return new class extends Migration
         // 1. The Main Website Table
         Schema::create('websites', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Link to User
-            $table->string('template_name')->nullable(); // e.g., 'portfolio', 'business'
-            $table->string('title')->default('My Website'); // Site Title
-            $table->string('slug')->unique(); // For URL: savvyqr.com/sarik
-            $table->boolean('is_published')->default(false);
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); 
+            
+            // 🟢 All the columns we need
+            $table->unsignedBigInteger('template_id')->nullable(); 
+            $table->string('title')->default('My Website');
+            $table->string('slug')->nullable(); 
+            $table->boolean('active')->default(true); 
+            
             $table->timestamps();
         });
 
-        // 2. The Sections Table (Where the magic happens)
-        Schema::create('website_sections', function (Blueprint $table) {
+        // 2. The Sections Table
+        Schema::create('websites_sections', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('website_id')->constrained()->onDelete('cascade'); // Link to Website
             
-            $table->string('section_type'); // e.g., 'hero', 'about', 'contact'
-            $table->integer('order_index')->default(0); // To sort sections (1, 2, 3...)
+            // 🟢 Link to the 'websites' table
+            $table->foreignId('website_id')->constrained('websites')->onDelete('cascade');
             
-            // 🟢 JSON COLUMNS: flexible storage for App & Web
-            $table->json('content')->nullable(); // Stores { "title": "Hi", "desc": "..." }
-            $table->json('styles')->nullable();  // Stores { "bg_color": "#fff", "text_color": "#000" }
+            // 🟢 Link to the Master Section ID
+            $table->unsignedBigInteger('section_id')->nullable(); 
+
+            // 🟢 JSON Columns for Data & Style
+            $table->json('values')->nullable(); 
+            $table->json('style')->nullable();  
             
             $table->timestamps();
         });
@@ -37,7 +42,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('website_sections');
+        Schema::dropIfExists('websites_sections');
         Schema::dropIfExists('websites');
     }
 };
