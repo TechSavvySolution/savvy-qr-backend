@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\UploadController;
 use App\Http\Controllers\Api\Admin\MasterTemplateController;
 
 // USER ROUTES (Prefix: /api/user)
-
 Route::prefix('user')->group(function () {
 
     // PUBLIC ROUTES (No Token Needed)
@@ -18,7 +17,6 @@ Route::prefix('user')->group(function () {
 
     //  PROTECTED ROUTES (Token Required)
     Route::middleware([APIMiddleware::class])->group(function () {
-        
         Route::post('/complete-profile', [UserController::class, 'completeProfile']);
         Route::get('/me', [UserController::class, 'getProfile']);
         Route::get('/by-id/{id}', [UserController::class, 'getUserById']);
@@ -27,7 +25,6 @@ Route::prefix('user')->group(function () {
     });
 
 });
-
 
 // WEBSITE BUILDER ROUTES
 

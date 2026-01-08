@@ -30,6 +30,9 @@ class UploadController extends Controller
             ]);
         }
 
-        return response()->json(['status' => false, 'message' => 'Upload failed'], 400);
+        return response()->json([
+            'status' => false, 
+            'message' => 'Upload failed'
+            ], 400);
     }
 }

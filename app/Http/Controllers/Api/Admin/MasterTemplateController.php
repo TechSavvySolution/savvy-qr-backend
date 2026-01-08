@@ -22,7 +22,7 @@ public function storeTemplate(Request $request)
 
     if ($request->hasFile('thumbnail')) {
         $path = $request->file('thumbnail')->store('templates', 'public');
-        $thumbnailUrl = asset('storage/' . $path);
+        $thumbnailUrl = asset('public/storage/' . $path);
     }
 
     $template = MasterTemplate::create([
