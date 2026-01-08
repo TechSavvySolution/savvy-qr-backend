@@ -234,19 +234,53 @@ class WebsiteController extends Controller
         ]);
 
         // 3. Save the Sections
-        foreach ($request->sections as $secData) {
-            WebsiteSection::create([
-                'website_id' => $website->id,
-                'section_id' => $secData['master_section_id'], // Links back to Master Section
-                'values'     => $secData['values'], // Saves JSON automatically (ensure model casts to array)
-                'style'      => $secData['style']   // Saves JSON automatically
-            ]);
+        // foreach ($request->sections as $secData) {
+        //     WebsiteSection::create([
+        //         'website_id' => $website->id,
+        //         'section_id' => $secData['master_section_id'], // Links back to Master Section
+        //         'values'     => $secData['values'], // Saves JSON automatically (ensure model casts to array)
+        //         'style'      => $secData['style']   // Saves JSON automatically
+        //     ]);
+        // }
+
+
+        // 3. Process Sections
+        if ($request->has('sections')) {
+            foreach ($request->sections as $index => $section) {
+                
+                // 🟢 IMAGE MAGIC: Check if any field in 'values' is a File
+                $processedValues = $section['values'] ?? [];
+
+                if (isset($section['values']) && is_array($section['values'])) {
+                    foreach ($section['values'] as $key => $value) {
+                        // Check if this specific key is an uploaded file
+                        if ($request->hasFile("sections.$index.values.$key")) {
+                            
+                            // A. Upload the file
+                            $file = $request->file("sections.$index.values.$key");
+                            $path = $file->store('uploads', 'public'); // Save to storage/app/public/uploads
+
+                            // B. Save the URL (e.g., http://localhost/storage/uploads/xyz.jpg)
+                            $processedValues[$key] = asset('storage/' . $path);
+                        }
+                    }
+                }
+
+                // 4. Save to Database
+                WebsiteSection::create([
+                    'website_id' => $website->id,
+                    'section_id' => $section['master_section_id'] ?? null, 
+                    'values'     => $processedValues, // Saves URLs instead of file objects
+                    'style'      => $section['style'] ?? []
+                ]);
+            }
         }
 
         return response()->json([
             'status'  => true,
             'message' => 'Website saved successfully!',
-            'data'    => $website
+            'data'    => $website->load('sections')
+            // 'data'    => $website
         ]);
     }
 
