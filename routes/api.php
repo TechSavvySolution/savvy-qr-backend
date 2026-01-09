@@ -21,10 +21,12 @@ Route::prefix('user')->group(function () {
         Route::get('/me', [UserController::class, 'getProfile']);
         Route::get('/by-id/{id}', [UserController::class, 'getUserById']);
         Route::post('/logout', [UserController::class, 'logout']);
+        Route::post('/update-profile', [UserController::class, 'updateProfile']);
         
     });
 
 });
+
 
 // WEBSITE BUILDER ROUTES
 
@@ -60,6 +62,8 @@ Route::prefix('admin')->group(function () {
     Route::post('/templates', [MasterTemplateController::class, 'storeTemplate']);
     // Route::get('/templates/{id}', [MasterTemplateController::class, 'getTemplateById']);
     Route::post('/templates/{id}/update_details', [MasterTemplateController::class, 'updateDetails']);
+    Route::get('/templates/{id}', [MasterTemplateController::class, 'getTemplateById']);
+    Route::delete('/templates/{id}', [MasterTemplateController::class, 'destroy']);
 
     // 2. Sections (The Dynamic Rules)
     Route::post('/sections', [MasterTemplateController::class, 'storeSection']);
@@ -68,9 +72,11 @@ Route::prefix('admin')->group(function () {
 
 // Route::get('/admin/templates/{id}', [MasterTemplateController::class, 'show']);
 
-Route::get('/templates/{id}', [MasterTemplateController::class, 'getTemplateById']);
 
 // Matches your diagram: /api/websites/{user_id}
 Route::post('/websites/{user_id}', [WebsiteController::class, 'store']);
 // 2. GET Websites (GET) - 🟢 ADD THIS LINE
 Route::get('/websites/{user_id}', [WebsiteController::class, 'index']);
+
+
+Route::post('/admin/login', [App\Http\Controllers\Api\AdminAuthController::class, 'login']);

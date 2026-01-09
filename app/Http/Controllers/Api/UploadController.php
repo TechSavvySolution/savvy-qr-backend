@@ -21,7 +21,7 @@ class UploadController extends Controller
 
             // 3. Return the Public URL
             // Example: http://127.0.0.1:8000/storage/uploads/xyz.jpg
-            $url = asset('storage/' . $path);
+            $url = asset('storage/' . $path);//public
 
             return response()->json([
                 'status' => true,

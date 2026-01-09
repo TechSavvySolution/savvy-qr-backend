@@ -136,4 +136,32 @@ public function storeTemplate(Request $request)
             'data'    => $template
         ]);
     }
+
+    /* ===============================
+       8️⃣ Delete Template
+    =============================== */
+    public function destroy($id)
+    {
+        $template = MasterTemplate::find($id);
+
+        if (!$template) {
+            return response()->json([
+                'status' => false, 
+                'message' => 'Template not found'
+            ], 404);
+        }
+
+        // Optional: Delete the image file to save space
+        // if ($template->thumbnail) {
+        //     $path = str_replace(asset('storage/'), '', $template->thumbnail);
+        //     \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+        // }
+
+        $template->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Template deleted successfully'
+        ]);
+    }
 }

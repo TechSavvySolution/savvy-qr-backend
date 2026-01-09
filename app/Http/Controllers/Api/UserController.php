@@ -229,4 +229,46 @@ class UserController extends Controller
         ]);
     }
 
+    // 8 UPDATE PROFILE (Handle Name, Bio, Phone, Email & Avatar)
+    public function updateProfile(Request $request)
+    {
+        $user = $request->auth_user; // Get User from Middleware
+
+        // 1. Validation
+        $validator = Validator::make($request->all(), [
+            'name'  => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:15',
+            'bio'   => 'nullable|string|max:500',
+            // Special Rule: Check unique email, but IGNORE the current user's own email
+            'email' => 'nullable|email|unique:users,email,' . $user->id,
+            'avatar'=> 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => $validator->errors()], 400);
+        }
+
+        // 2. Handle Image Upload (If a new photo is sent)
+        if ($request->hasFile('avatar')) {
+            // A. (Optional) You could delete the old image here to save space
+            
+            // B. Upload new image
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = asset('storage/' . $path);
+        }
+
+        // 3. Update Text Fields (Only if they are sent)
+        if ($request->has('name'))  $user->name = $request->name;
+        if ($request->has('phone')) $user->phone = $request->phone;
+        if ($request->has('bio'))   $user->bio = $request->bio;
+        if ($request->has('email')) $user->email = $request->email;
+
+        $user->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Profile updated successfully!',
+            'data' => $user
+        ]);
+    }
 }
