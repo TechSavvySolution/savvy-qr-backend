@@ -10,6 +10,7 @@ use App\Models\MasterSection;
 class MasterTemplateController extends Controller
 {
 
+    //1️⃣ CREATE TEMPLATE (Admin)
 public function storeTemplate(Request $request)
 {
     // 1. Allow nullable thumbnail for "Draft" creation
@@ -38,7 +39,7 @@ public function storeTemplate(Request $request)
     ]);
 }
 
-
+    //2️⃣ GET ALL TEMPLATES (Admin Dashboard)
     public function getTemplates()
 {
     // Fetch templates with their sections
@@ -53,6 +54,7 @@ public function storeTemplate(Request $request)
     ]);
 }
 
+    //3️⃣ UPDATE TEMPLATE DETAILS (Name/Image)
    public function updateDetails(Request $request, $id)
 {
     $template = MasterTemplate::findOrFail($id);
@@ -60,13 +62,13 @@ public function storeTemplate(Request $request)
     // 1. Validation: Make thumbnail 'nullable' so we don't force re-upload
     $request->validate([
         'name' => 'required|string|max:255',
-        'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
+        'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120'
     ]);
 
     // 2. Handle File Upload (Only if user uploaded a NEW one)
     if ($request->hasFile('thumbnail')) {
         $path = $request->file('thumbnail')->store('templates', 'public');
-        $template->thumbnail = asset('storage/' . $path);
+        $template->thumbnail = asset('storage/' . $path);//public
     }
 
     // 3. Save Changes
@@ -80,7 +82,7 @@ public function storeTemplate(Request $request)
     ]);
 }
 
-    // Save a Section Rule (The data from your "Add Section" Pop-up)
+    // 4️⃣ ADD SECTION RULE (Dynamic Schema)
     public function storeSection(Request $request)
     {
         $request->validate([
@@ -90,12 +92,6 @@ public function storeTemplate(Request $request)
             'fields_schema' => 'nullable|array', // THIS IS THE DYNAMIC PART
             'default_styles' => 'nullable|array'
         ]);
-
-        // Example of what 'fields_schema' looks like coming from your Admin UI:
-        // [
-        //    { "label": "Main Title", "type": "short_text", "key": "title" },
-        //    { "label": "Background", "type": "photo", "key": "bg_image" }
-        // ]
 
         $section = MasterSection::create([
             'master_template_id' => $request->master_template_id,
@@ -114,7 +110,7 @@ public function storeTemplate(Request $request)
 
 
     /* ===============================
-       7️⃣ Find Template by ID (PUBLIC/PROTECTED)
+       5️⃣ Find Template by ID (PUBLIC/PROTECTED)
        Used by: Mobile App & Frontend Builder
     =============================== */
     public function getTemplateById(Request $request, $id)
@@ -137,9 +133,8 @@ public function storeTemplate(Request $request)
         ]);
     }
 
-    /* ===============================
-       8️⃣ Delete Template
-    =============================== */
+       //6️⃣ Delete Template
+
     public function destroy($id)
     {
         $template = MasterTemplate::find($id);
@@ -150,18 +145,13 @@ public function storeTemplate(Request $request)
                 'message' => 'Template not found'
             ], 404);
         }
-
-        // Optional: Delete the image file to save space
-        // if ($template->thumbnail) {
-        //     $path = str_replace(asset('storage/'), '', $template->thumbnail);
-        //     \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
-        // }
-
+        
         $template->delete();
 
         return response()->json([
             'status' => true,
-            'message' => 'Template deleted successfully'
+            'message' => 'Template deleted successfully',
+            'data' => $template
         ]);
     }
 }

@@ -1,5 +1,5 @@
 <?php
- 
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -7,11 +7,12 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use App\Helpers\TokenHelper;
 
 class UserController extends Controller
 {
-    // 1️⃣ Unique username
+    // 1️⃣ Check Unique Username
     public function isUniqueUser($username)
     {
         $exists = User::where('username', $username)->exists();
@@ -26,12 +27,16 @@ class UserController extends Controller
     // 2️⃣ Register
     public function register(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'username' => 'required|unique:users,username',
-            'name'     => 'required |string|max:255',
+            'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:8'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 400);
+        }
 
         $user = User::create([
             'username' => $request->username,
@@ -43,16 +48,15 @@ class UserController extends Controller
         return response()->json([
             'status'  => true,
             'message' => 'User registered successfully',
-            'data'    => 
-             [
+            'data'    => [
                 'id'       => $user->id,
                 'username' => $user->username,
                 'email'    => $user->email
-              ]
-        ] ,201 );
+            ]
+        ], 201);
     }
 
-    // 3️⃣ Login 
+    // 3️⃣ Login
     public function login(Request $request)
     {
         $request->validate([
@@ -70,29 +74,6 @@ class UserController extends Controller
             ], 401);
         }
 
-        // 🟢 HARDCODED ADMIN CHECK
-        // If the email is YOUR admin email, they get the 'admin' role.
-        // Everyone else gets 'user'.
-        // $role = ($user->email === 'admin@gmail.com') ? 'admin' : 'user';
-
-        // $role = 'user'; // Default
-        // if ($user->email === 'admin@gmail.com') {
-        //     $role = 'admin';
-        // }
-
-        // return response()->json([
-        //     'status'  => true,
-        //     'message' => 'Login successful',
-        //     'token'   => TokenHelper::encode($user),
-        //     'user'    => [
-        //         'id'          => $user->id,
-        //         'name'        => $user->name,
-        //         'email'       => $user->email,
-        //         'role'        => $role, // 👈 Sending the calculated role
-        //         'profile_pic' => $user->profile_pic
-        //     ]
-        // ]);
-
         return response()->json([
             'status'  => true,
             'message' => 'Login successful',
@@ -103,10 +84,7 @@ class UserController extends Controller
         ]);
     }
 
-     /* ===============================
-       4️⃣ Get logged-in user profile (PROTECTED)
-       Middleware already verified token
-    =============================== */
+    // 4️⃣ Get Profile
     public function getProfile(Request $request)
     {
         return response()->json([
@@ -116,38 +94,20 @@ class UserController extends Controller
         ]);
     }
 
-
-     /* ===============================
-       5️⃣ Complete / Update profile (PROTECTED)
-       Image update + old delete
-    =============================== */
-
-  public function completeProfile(Request $request)
+    // 5️⃣ Complete Profile (Strict Validation)
+    public function completeProfile(Request $request)
     {
-        // auth_user already verified by middleware
-        // $user = $request->auth_user;
-        // 1. Check if auth_user exists from middleware
         if (!$request->auth_user) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Unauthorized: User not found or token invalid',
-                'data' => null
-            ], 401);
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 401);
         }
 
-        // 2. Ensure we have a real User Model (required for ->save())
-        // If middleware passed an ID or array, we find the model here.
-        $userId = $request->auth_user->id ?? $request->auth_user['id'] ?? null;
-        $user = User::find($userId);
-
+        // 🟢 FIXED: Fetch Fresh User Model to ensure save() works
+        $user = User::find($request->auth_user->id);
 
         if (!$user) {
-            return response()->json([
-                'status' => false,
-                'message' => 'User account not found in database',
-                'data' => null 
-            ], 404);
+            return response()->json(['status' => false, 'message' => 'User not found'], 404);
         }
+
         $request->validate([
             'phone'       => 'required|digits_between:10,15',
             'dob'         => 'required|date|before:today',
@@ -157,25 +117,18 @@ class UserController extends Controller
             'profile_pic' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120'
         ]);
 
-        // 🖼 Image upload + old delete
+        // Handle Image
         if ($request->hasFile('profile_pic')) {
-
-            if ($user->profile_pic && Storage::disk('public')->exists(
-                str_replace('storage/', '', $user->profile_pic)
-            )) {
-                Storage::disk('public')->delete(
-                    str_replace('storage/', '', $user->profile_pic)
-                );
+            // Delete old if exists
+            if ($user->profile_pic) {
+                $oldPath = str_replace(asset('storage/'), '', $user->profile_pic);
+                Storage::disk('public')->delete($oldPath);
             }
 
-            $image = $request->file('profile_pic');
-            $fileName = 'user_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
-            $image->storeAs('profile', $fileName, 'public');
-
-            $user->profile_pic = 'storage/profile/' . $fileName;
+            $path = $request->file('profile_pic')->store('profile', 'public');
+            $user->profile_pic = asset('storage/' . $path); // 🟢 Standardized to full URL
         }
 
-        // Other fields
         $user->phone  = $request->phone;
         $user->dob    = $request->dob;
         $user->gender = $request->gender;
@@ -186,26 +139,18 @@ class UserController extends Controller
         
         return response()->json([
             'status'  => true,
-            'message' => 'Profile updated successfully',
+            'message' => 'Profile completed successfully',
             'data'    => $user
         ]);
     }
 
-       /* ===============================
-       6️⃣ Find user by ID (PROTECTED)
-       Why protected? Security.
-    =============================== */
-    public function getUserById(Request $request, $id)
+    // 6️⃣ Get User By ID
+    public function getUserById($id)
     {
-        // auth_user already verified by middleware
         $user = User::find($id);
 
         if (!$user) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'User not found',
-                'data'    => null
-            ], 404);
+            return response()->json(['status' => false, 'message' => 'User not found'], 404);
         }
 
         return response()->json([
@@ -215,12 +160,8 @@ class UserController extends Controller
         ]);
     }
 
-
-    /* ===============================
-       7️⃣ Logout (PROTECTED)
-       Stateless token → client side logout
-    =============================== */
-    public function logout(Request $request)
+    // 7️⃣ Logout
+    public function logout()
     {
         return response()->json([
             'status'  => true,
@@ -229,35 +170,38 @@ class UserController extends Controller
         ]);
     }
 
-    // 8 UPDATE PROFILE (Handle Name, Bio, Phone, Email & Avatar)
+    // 8️⃣ Update Profile (Flexible Update)
     public function updateProfile(Request $request)
     {
-        $user = $request->auth_user; // Get User from Middleware
+        // 🟢 FIXED: Ensure we have the Model, not just the Middleware Object
+        $user = User::find($request->auth_user->id);
 
-        // 1. Validation
+        if (!$user) return response()->json(['status' => false, 'message' => 'User not found'], 404);
+
         $validator = Validator::make($request->all(), [
-            'name'  => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:15',
-            'bio'   => 'nullable|string|max:500',
-            // Special Rule: Check unique email, but IGNORE the current user's own email
-            'email' => 'nullable|email|unique:users,email,' . $user->id,
-            'avatar'=> 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'name'        => 'nullable|string|max:255',
+            'phone'       => 'nullable|string|max:15',
+            'bio'         => 'nullable|string|max:500',
+            'email'       => 'nullable|email|unique:users,email,' . $user->id,
+            'profile_pic' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048' // 🟢 Changed 'avatar' to 'profile_pic'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['status' => false, 'message' => $validator->errors()], 400);
         }
 
-        // 2. Handle Image Upload (If a new photo is sent)
-        if ($request->hasFile('avatar')) {
-            // A. (Optional) You could delete the old image here to save space
-            
-            // B. Upload new image
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = asset('storage/' . $path);
+        // Handle Image Upload
+        if ($request->hasFile('profile_pic')) {
+             if ($user->profile_pic) {
+                // Try to clean up URL to get relative path for deletion
+                $oldPath = str_replace(asset('storage/'), '', $user->profile_pic); 
+                Storage::disk('public')->delete($oldPath);
+            }
+
+            $path = $request->file('profile_pic')->store('profile', 'public');
+            $user->profile_pic = asset('storage/' . $path); // 🟢 Standardized to 'profile_pic'
         }
 
-        // 3. Update Text Fields (Only if they are sent)
         if ($request->has('name'))  $user->name = $request->name;
         if ($request->has('phone')) $user->phone = $request->phone;
         if ($request->has('bio'))   $user->bio = $request->bio;
@@ -266,9 +210,9 @@ class UserController extends Controller
         $user->save();
 
         return response()->json([
-            'status' => true,
+            'status'  => true,
             'message' => 'Profile updated successfully!',
-            'data' => $user
+            'data'    => $user
         ]);
     }
 }
