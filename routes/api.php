@@ -8,7 +8,7 @@ use App\Http\Controllers\Api\Admin\MasterTemplateController;
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Middleware\APIMiddleware;
 
-//1️⃣ AUTHENTICATION ROUTES (Public)
+//1 AUTHENTICATION ROUTES (Public)
 
 // USER ROUTES (Prefix: /api/user)
 Route::prefix('user')->group(function () {
@@ -30,19 +30,20 @@ Route::prefix('user')->group(function () {
 });
 
 //ADMIN ROUTES (Template Builder)
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')->middleware([APIMiddleware::class])->group(function () {
     
-    // 1. Templates
-    Route::get('/templates', [MasterTemplateController::class, 'getTemplates']);
+    // ✅ 1. GET Templates (For Admin Dashboard List)
+    // Route::get('/templates', [MasterTemplateController::class, 'getTemplates']);
+
+    // ✅ 2. Create/Edit/Delete Templates
     Route::post('/templates', [MasterTemplateController::class, 'storeTemplate']);
-    // Route::get('/templates/{id}', [MasterTemplateController::class, 'getTemplateById']);
     Route::post('/templates/{id}/update_details', [MasterTemplateController::class, 'updateDetails']);
     Route::delete('/templates/{id}', [MasterTemplateController::class, 'destroy']);
 
-    // 2. Sections (The Dynamic Rules)
+    // ✅ 3. Sections
     Route::post('/sections', [MasterTemplateController::class, 'storeSection']);
+});
 
-}); 
 Route::get('/templates', [MasterTemplateController::class, 'getTemplates']);
 
 // Admin Auth
