@@ -33,7 +33,7 @@ Route::prefix('user')->group(function () {
 Route::prefix('admin')->group(function () {
     
     // 1. Templates
-    Route::get('/templates', [MasterTemplateController::class, 'getTemplates']);
+    
     Route::post('/templates', [MasterTemplateController::class, 'storeTemplate']);
     // Route::get('/templates/{id}', [MasterTemplateController::class, 'getTemplateById']);
     Route::post('/templates/{id}/update_details', [MasterTemplateController::class, 'updateDetails']);
@@ -43,6 +43,7 @@ Route::prefix('admin')->group(function () {
     Route::post('/sections', [MasterTemplateController::class, 'storeSection']);
 
 }); 
+Route::get('/templates', [MasterTemplateController::class, 'getTemplates']);
 
 // Admin Auth
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
