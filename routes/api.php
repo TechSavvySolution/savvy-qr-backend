@@ -33,7 +33,7 @@ Route::prefix('user')->group(function () {
 Route::prefix('admin')->middleware([APIMiddleware::class])->group(function () {
     
     // ✅ 1. GET Templates (For Admin Dashboard List)
-    // Route::get('/templates', [MasterTemplateController::class, 'getTemplates']);
+    Route::get('/templates', [MasterTemplateController::class, 'getTemplates']);
 
     // ✅ 2. Create/Edit/Delete Templates
     Route::post('/templates', [MasterTemplateController::class, 'storeTemplate']);
