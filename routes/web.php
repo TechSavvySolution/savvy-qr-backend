@@ -1,13 +1,15 @@
 <?php
-use Illuminate\Support\Facades\Artisan;
+
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 
-// Route::get('/clear-everything', function () {
-//     Artisan::call('route:clear');
-//     Artisan::call('config:clear');
-//     Artisan::call('cache:clear');
-//     Artisan::call('optimize:clear');
-//     return "✅ Routes and Cache Cleared Successfully! Go try your API now.";
-// }); 
+Route::get('/', function () {
+    return view('welcome');
+});
 
-//simple for testing please write
+Route::get('/force-clear', function() {
+    Artisan::call('route:clear');
+    Artisan::call('config:clear');
+    Artisan::call('cache:clear');
+    return '<h1>✅ Success! Cache Cleared.</h1>';
+}); 
