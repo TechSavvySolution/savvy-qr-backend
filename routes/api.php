@@ -81,7 +81,10 @@ Route::get('/websites/{user_id}', [WebsiteController::class, 'index']);//current
 
 
 // Matches your diagram: /api/websites/{user_id}
-Route::post('/websites/{user_id}', [WebsiteController::class, 'store']); //currently not use
+// Route::post('/websites/{user_id}', [WebsiteController::class, 'store']); //currently not use
+
+// Matches your diagram: POST /api/websites/1
+Route::post('/websites/{user_id}', [WebsiteController::class, 'saveWebsiteData']);
 
 // PUBLIC WEBSITE ROUTES (No Login Needed) 
 // It sits outside the middleware so anyone can visit.

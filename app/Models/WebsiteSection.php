@@ -11,6 +11,11 @@ class WebsiteSection extends Model
 
     protected $fillable = ['website_id', 'section_id', 'values', 'style'];
 
+    protected $casts = [
+        'values' => 'array',
+        'style'  => 'array',
+    ];   
+
     // 🟢 Relationship to the Master Rule
     public function section()
     {

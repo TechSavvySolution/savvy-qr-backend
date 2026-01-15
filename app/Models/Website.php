@@ -28,6 +28,7 @@ class Website extends Model
         'user_id', 
         'template_id', 
         'title', 
+        'url_slug',
         'active'
     ];
 
